@@ -83,6 +83,14 @@ func main() {
 
 	fmt.Printf("raw: %x\n", res.RawResponse)
 
+	defer func() {
+		counterStr := strconv.FormatUint(uint64(res.Counter), 10)
+		err = ioutil.WriteFile(outputPath+"prevCounter", []byte(counterStr), 0666)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	var prevCounter uint32
 	rawPrevCounter, err := ioutil.ReadFile(outputPath + "prevCounter")
 	if os.IsNotExist(err) {
@@ -162,11 +170,5 @@ func main() {
 	} else {
 		fmt.Println("NOT AUTHENTICATED")
 		os.Exit(0)
-	}
-
-	counterStr := strconv.FormatUint(uint64(res.Counter), 10)
-	err = ioutil.WriteFile(outputPath+"prevCounter", []byte(counterStr), 0666)
-	if err != nil {
-		panic(err)
 	}
 }

@@ -7,12 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/flynn/u2f/u2fhid"
 	"github.com/flynn/u2f/u2ftoken"
 )
 
-var outputPath = "../data/"
+var outputPath = "../data"
 
 func main() {
 	// Enumerate devices
@@ -69,13 +71,23 @@ func main() {
 
 	fmt.Printf("response: %x\n", res)
 
+	err = os.RemoveAll(outputPath + "/")
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.Mkdir(outputPath, 0666)
+	if err != nil {
+		panic(err)
+	}
+
 	// parse response
 	if res[0] != 5 {
 		panic(errors.New("registration response must begin with magic byte 0x05"))
 	}
 	res = res[1:] // remove magic byte
 	rawpubkey := res[:65]
-	ioutil.WriteFile(outputPath+"pubkey", rawpubkey, 0666)
+	ioutil.WriteFile(filepath.Join(outputPath, "pubkey"), rawpubkey, 0666)
 
 	res = res[65:] // remove pubkey
 	keyHandleLen := res[0]
@@ -84,7 +96,7 @@ func main() {
 	res = res[keyHandleLen:] // remove key handle
 	fmt.Printf("Key Handle: %x\n", keyHandle)
 
-	ioutil.WriteFile(outputPath+"keyHandle", keyHandle, 0666)
+	ioutil.WriteFile(filepath.Join(outputPath, "keyHandle"), keyHandle, 0666)
 
 	signature, err := asn1.Unmarshal(res, &asn1.RawValue{}) // skip cert
 	if err != nil {
@@ -95,7 +107,7 @@ func main() {
 	res = res[:len(res)-len(signature)] // remove signature from tail
 	// this leaves only cert in res
 
-	err = ioutil.WriteFile(outputPath+"attestation.crt", res, 0666)
+	err = ioutil.WriteFile(filepath.Join(outputPath, "attestation.crt"), res, 0666)
 	if err != nil {
 		panic(err)
 	}
