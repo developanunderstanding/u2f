@@ -76,7 +76,7 @@ func main() {
 		panic(err)
 	}
 
-	err = os.Mkdir(outputPath, 0666)
+	err = os.Mkdir(outputPath, 0777)
 	if err != nil {
 		panic(err)
 	}
